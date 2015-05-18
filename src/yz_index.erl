@@ -282,7 +282,14 @@ local_remove(Name) ->
 local_remove(Name, CoreProps) ->
     case yz_solr:core(remove, CoreProps) of
         {ok, _, _} ->
-            lager:info("Unloaded previous instance of index ~s", [Name]);
+            lager:info("Unloaded previous instance of index ~s", [Name]),
+            %% Force reloading local core after unload in this state of recreate
+            lager:info("Reload instance of index ~s", [Name]),
+            case reload_local(Name, []) of
+                ok -> ok;
+                {error, ReloadErr} ->
+                    lager:error("Couldn't reload local index ~s: ~p", [Name, ReloadErr])
+            end;
         {error, {ok, "400", _, Resp}} ->
             lager:info("Couldn't unload index ~s prior to creating "
                        "a new instance of it. This is likely the first "
